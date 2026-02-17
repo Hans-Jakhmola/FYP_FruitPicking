@@ -12,31 +12,14 @@ planeId = p.loadURDF('plane.urdf') #load in a plane
 
 ur5 = p.loadURDF('Models/URDF/ur5.urdf',basePosition=[0, 0, 0],useFixedBase=True) #load ur5 robot at 0,0,0 with a base fixed to the plane
 
-# Rotation (change if needed)
-orientation = p.getQuaternionFromEuler([math.pi/2, 0, 0])
+# Rotation
+orientation = p.getQuaternionFromEuler([math.pi/2, 0, 0]) #rotate tree 90 degrees about the x axis so it is upright
 
-# Visual shape
-visualShapeId = p.createVisualShape(
-    shapeType=p.GEOM_MESH,
-    fileName="Models/Tree/Tree.obj",
-    meshScale=[0.13, 0.13, 0.13]
-)
+treeshape = p.createVisualShape(shapeType=p.GEOM_MESH, fileName="Models/Tree/Tree.obj", meshScale=[0.13, 0.13, 0.13]) #create the visual component of the tree using obj file
 
-# Collision shape (important!)
-collisionShapeId = p.createCollisionShape(
-    shapeType=p.GEOM_MESH,
-    fileName="Models/Tree/Tree.obj",
-    meshScale=[0.13, 0.13, 0.13]
-)
+treecollision = p.createCollisionShape(shapeType=p.GEOM_MESH, fileName="Models/Tree/Tree.obj", meshScale=[0.13, 0.13, 0.13]) #create collision for tree
 
-# Create static rigid body (mass=0 → static)
-tree = p.createMultiBody(
-    baseMass=0,  # 0 = static object
-    baseCollisionShapeIndex=collisionShapeId,
-    baseVisualShapeIndex=visualShapeId,
-    basePosition=[0.6, -0.1, 0],
-    baseOrientation=orientation
-)
+tree = p.createMultiBody(baseMass=0, baseCollisionShapeIndex=treecollision, baseVisualShapeIndex=treeshape, basePosition=[0.6, -0.1, 0], baseOrientation=orientation) #spawn in tree multibody using visual component, collision and base position. tree will be static so mass is 0
 
 ur5_start_conf = [0,-1.65715,1.71108,-1.62348,0,0] #home configuration
 ik_joints = get_movable_joints(ur5) #get all moveable joints for the ur5
