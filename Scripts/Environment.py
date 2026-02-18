@@ -41,10 +41,11 @@ class environment:
                                 jointIndex=i,
                                 controlMode=p.POSITION_CONTROL,
                                 targetPosition=ik_result[i],
-                                targetVelocity=0,
-                                force=500,
-                                positionGain=0.03,
-                                velocityGain=1)
+                                )
+                                
+	def getjointconfiguration(self):
+		self.jointconfig = p.getJointStates(self.ur5,range(p.getNumJoints(self.ur5)))
+		print(self.jointconfig)
 
 	def step(self):
 	        p.stepSimulation()
