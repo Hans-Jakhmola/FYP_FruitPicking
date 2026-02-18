@@ -17,7 +17,8 @@ class environment:
 		self.planeId = p.loadURDF('plane.urdf') #load in a plane 
 
 		self.ur5 = p.loadURDF('Models/URDF/ur5_robotiq_85.urdf',basePosition=[0, 0, 0],useFixedBase=True) #load ur5 robot at 0,0,0 with a base fixed to the plane
-
+		self.fruit = p.loadURDF("cube_small.urdf", [0.5,0.5,0])
+		p.changeVisualShape(self.fruit, -1, rgbaColor=[1, 0, 0, 1])
 		# Rotation
 		self.treeorientation = p.getQuaternionFromEuler([math.pi/2, 0, 0]) #rotate tree 90 degrees about the x axis so it is upright
 
@@ -35,7 +36,7 @@ class environment:
 		set_joint_positions(self.ur5,self.ik_joints, self.ur5_start_conf) #set the joint to the configuration specified above, takes in 3 parameters (the robot,the joints,the configuration)
 		
 	def movetoconfig(self,ik_result):
-		for i in range(7): #go through all 6 joints and set the joints to that value
+		for i in range(12): #go through all 6 joints and set the joints to that value
         			p.setJointMotorControl2(bodyIndex=self.ur5,
                                 jointIndex=i,
                                 controlMode=p.POSITION_CONTROL,
