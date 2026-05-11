@@ -6,50 +6,36 @@ from pybullet_planning import get_num_joints, get_joint_names, get_movable_joint
     joints_from_names, get_sample_fn, plan_joint_motion
 import pybullet_planning as pp
 
-class environment:
-	def initialise(self,gui):
+class environment: #environment class
+	def initialise(self, gui): #initialise environment spawn in tree model robot model and fruit
 		if gui:
-			p.connect(p.GUI)
+			pp.connect(use_gui=gui)
 		else:
-            		p.connect(p.DIRECT)
-		p.setAdditionalSearchPath(pybullet_data.getDataPath()) #look in pybullet installation for models such as plane
-		p.setGravity(0,0,-9.8) #set gravity to earth gravity
-		self.planeId = p.loadURDF('plane.urdf') #load in a plane 
+			p.connect(p.DIRECT)
+		p.setAdditionalSearchPath(pybullet_data.getDataPath())
+		p.setGravity(0, 0, -9.8)
+		self.planeId = p.loadURDF('plane.urdf')
+		self.ur5 = p.loadURDF('Models/URDF/ur5_robotiq_85.urdf', basePosition=[0, 0, 0], useFixedBase=True)
+		self.fruit = p.loadURDF("cube_small.urdf", [0.495, -0.054, 0.520])
+		p.changeDynamics(self.fruit, -1, linearDamping=0.5, angularDamping=0.5, mass=0.05) #fruit dynamics
+		p.changeVisualShape(self.fruit, -1, rgbaColor=[1, 0, 0, 1]) #make fruit red
+		self.treeorientation = p.getQuaternionFromEuler([math.pi/2, 0, 0])
+		self.treeshape = p.createVisualShape(shapeType=p.GEOM_MESH, fileName="Models/Tree/Tree.obj", meshScale=[0.13, 0.13, 0.13])
+		self.treecollision = p.createCollisionShape(shapeType=p.GEOM_MESH, fileName="Models/Tree/Tree.obj", meshScale=[0.13, 0.13, 0.13])
+		self.tree = p.createMultiBody(
+			baseMass=0,
+			baseCollisionShapeIndex=self.treecollision,
+			baseVisualShapeIndex=self.treeshape,
+			basePosition=[0.7, -0.1, 0],
+			baseOrientation=self.treeorientation
+		)
+		self.ur5_start_conf = [0, -1.9, 1.71108, -1.62348, 1, 0, 0, 0, 0, 0, 0, 0]
+		self.ik_joints = get_movable_joints(self.ur5)
+		self.ik_joint_names = get_joint_names(self.ur5, self.ik_joints)
+		print('Joint {} \ncorresponds to:\n{}'.format(self.ik_joints, self.ik_joint_names))
+		set_joint_positions(self.ur5, self.ik_joints, self.ur5_start_conf)
 
-		self.ur5 = p.loadURDF('Models/URDF/ur5_robotiq_85.urdf',basePosition=[0, 0, 0],useFixedBase=True) #load ur5 robot at 0,0,0 with a base fixed to the plane
-		self.fruit = p.loadURDF("cube_small.urdf", [0.5,0.5,0])
-		p.changeVisualShape(self.fruit, -1, rgbaColor=[1, 0, 0, 1])
-		# Rotation
-		self.treeorientation = p.getQuaternionFromEuler([math.pi/2, 0, 0]) #rotate tree 90 degrees about the x axis so it is upright
+	def step(self): #move simulation step
+		p.stepSimulation()
+		time.sleep(1. / 240.)
 
-		self.treeshape = p.createVisualShape(shapeType=p.GEOM_MESH, fileName="Models/Tree/Tree.obj", meshScale=[0.13, 0.13, 0.13]) #create the visual component of the tree using obj file
-
-		self.treecollision = p.createCollisionShape(shapeType=p.GEOM_MESH, fileName="Models/Tree/Tree.obj", meshScale=[0.13, 0.13, 0.13]) #create collision for tree
-
-		self.tree = p.createMultiBody(baseMass=0, baseCollisionShapeIndex=self.treecollision, baseVisualShapeIndex=self.treeshape, basePosition=[0.8, -0.1, 0], baseOrientation=self.treeorientation) #spawn in tree multibody using visual component, collision and base position. tree will be static so mass is 0
-
-		self.ur5_start_conf = [0,-1.65715,1.71108,-1.62348,1,0,0,0,0,0,0,0] #home configuration first 6 indexes are joints on the robot rest are related to the robotiq-85 gripper
-		self.ik_joints = get_movable_joints(self.ur5) #get all moveable joints for the ur5
-		self.ik_joint_names = get_joint_names(self.ur5, self.ik_joints) #get the names of the joints
-		print('Joint {} \ncorresponds to:\n{}'.format(self.ik_joints, self.ik_joint_names)) #print joints
-
-		set_joint_positions(self.ur5,self.ik_joints, self.ur5_start_conf) #set the joint to the configuration specified above, takes in 3 parameters (the robot,the joints,the configuration)
-		
-	def movetoconfig(self,ik_result):
-		for i in range(12): #go through all 6 joints and set the joints to that value
-        			p.setJointMotorControl2(bodyIndex=self.ur5,
-                                jointIndex=i,
-                                controlMode=p.POSITION_CONTROL,
-                                targetPosition=ik_result[i],
-                                )
-                                
-	def getjointconfiguration(self):
-		self.jointconfig = p.getJointStates(self.ur5,range(p.getNumJoints(self.ur5)))
-		print(self.jointconfig)
-
-	def step(self):
-	        p.stepSimulation()
-	        time.sleep(1./240.)
-	        
-	def close(self):
-        	p.disconnect()
